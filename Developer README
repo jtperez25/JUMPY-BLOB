@@ -1,0 +1,222 @@
+# 🟣 Jumpy Blob — Developer README
+
+A single-file **Python / Pygame** arcade game focused on **feel**, **fluid animation**, and **readable systems**.  
+This document explains the internal structure, game systems, and design decisions for developers who want to understand, modify, or extend the game.
+
+---
+
+## 🧠 High-Level Architecture
+
+The entire game lives in **one Python file** by design.  
+The structure follows a classic game-loop pattern:
+
+1. **Constants & Data Definitions**
+2. **Initialization (Pygame, assets, state)**
+3. **Main Loop**
+   - Input handling
+   - Physics & state updates
+   - Obstacle logic
+   - Collision detection
+   - Rendering
+4. **Cleanup**
+
+No external assets are required — all visuals are procedurally generated.
+
+---
+
+## ⚙️ Core Systems
+
+### 🎮 Game Loop
+
+The main loop runs at **60 FPS**:
+
+```python
+while running:
+    handle_events()
+    update_game_state()
+    draw_frame()
+```
+
+Timing is controlled with `clock.tick(60)` to keep physics stable.
+
+---
+
+## 🟣 Blob System
+
+### Movement & Physics
+
+- Vertical-only movement (endless runner style)
+- Gravity-based jump physics
+- Supports **double jump**
+- Ground collision resets jump state
+
+Key variables:
+- `velocity_y`
+- `gravity`
+- `is_on_ground`
+- `jump_boosts_used`
+
+---
+
+### Squash & Stretch
+
+The blob visually reacts to velocity:
+
+- **Falling fast** → squash
+- **Jumping upward** → stretch
+- Smooth interpolation prevents snapping
+
+```python
+blob_squish += (target_squish - blob_squish) * 0.18
+blob_stretch += (target_stretch - blob_stretch) * 0.18
+```
+
+---
+
+### Fluid Wobble
+
+Wobble is generated using layered sine/cosine waves:
+
+- Phase-based oscillation
+- Smoothed using interpolation
+- Applied progressively per draw layer
+
+This creates a gooey, organic motion without shaders.
+
+---
+
+### Color Transitions
+
+- Blob color changes on **landing**
+- Colors are pulled from Tetris-style palette
+- Transition is frame-based and clamped safely
+
+```python
+current = lerp(current_blob_color, target_blob_color, t)
+```
+
+---
+
+## 🧱 Obstacle System
+
+### Tetromino Data
+
+Obstacles are defined using relative grid coordinates:
+
+```python
+TETROMINOES = {
+    'T': [[(0,0),(1,0),(-1,0),(0,1)], ...]
+}
+```
+
+Each tetromino:
+- Has multiple rotations
+- Uses block-based positioning
+- Is rendered using simple rectangles
+
+---
+
+### Spawning & Movement
+
+- Obstacles spawn at fixed intervals
+- Move left at constant speed
+- Rotate periodically using a timer
+
+Key values:
+- `SPAWN_INTERVAL`
+- `OBSTACLE_SPEED`
+- `ROTATION_INTERVAL`
+
+---
+
+### Scoring
+
+- Score increases when an obstacle fully passes the blob
+- Each obstacle tracks whether it has been counted
+
+---
+
+## 💥 Collision Detection
+
+Collision uses **circle-rectangle intersection**:
+
+```python
+def circle_rect_collision(cx, cy, cr, rx, ry, rw, rh):
+```
+
+Each tetromino block is checked individually against the blob’s circular hitbox.
+
+This approach:
+- Keeps math simple
+- Matches the blob’s visual shape
+- Avoids pixel-perfect collision costs
+
+---
+
+## 🌈 Background Rendering
+
+- Gradient backgrounds are **pre-rendered**
+- 30 frames are generated at startup
+- Background cycles slowly over time
+
+This avoids per-frame pixel math during gameplay.
+
+---
+
+## 🖌 Rendering Order
+
+1. Gradient background
+2. Ground
+3. Obstacles
+4. Blob (layered ellipses)
+5. UI (score / game over)
+
+The blob is rendered using **multiple ellipse layers** for depth and lighting.
+
+---
+
+## 🧪 Performance Notes
+
+- Single file for simplicity and portability
+- No external images or sounds
+- Precomputed gradients reduce CPU load
+- Simple math keeps frame times stable
+
+---
+
+## 🔧 Modding & Extension Ideas
+
+- Add horizontal blob movement
+- Introduce obstacle speed scaling
+- Add sound effects on jump / collision
+- Convert tetromino system into a level generator
+- Add screen shake or hit pause
+- Port blob rendering to shaders (OpenGL)
+
+---
+
+## 📦 Requirements
+
+- Python **3.8+**
+- `pygame`
+
+Install:
+```bash
+pip install pygame
+```
+
+Run:
+```bash
+python jumpy_blob.py
+```
+
+---
+
+## 📜 License
+
+Open-source and free to use, modify, and redistribute.  
+Attribution appreciated but not required.
+
+---
+
+Built to feel **juicy**, **readable**, and **fun to hack on** 🟣
